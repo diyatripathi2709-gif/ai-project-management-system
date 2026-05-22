@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StyleNest – Project Status Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #f7f5f2;
+    --surface: #ffffff;
+    --surface2: #faf9f7;
+    --border: #e8e3dc;
+    --ink: #1a1714;
+    --ink2: #5a5550;
+    --ink3: #9e9890;
+    --rose: #c8504a;
+    --rose-soft: #f5e8e7;
+    --amber: #d4903a;
+    --amber-soft: #fdf3e3;
+    --jade: #3a7d5a;
+    --jade-soft: #e3f0ea;
+    --cobalt: #3a5fa0;
+    --cobalt-soft: #e6ecf8;
+    --mauve: #7a5a8a;
+    --mauve-soft: #f0eaf5;
+    --shadow-sm: 0 1px 3px rgba(26,23,20,0.06), 0 1px 2px rgba(26,23,20,0.04);
+    --shadow: 0 4px 12px rgba(26,23,20,0.08), 0 2px 4px rgba(26,23,20,0.04);
+    --shadow-lg: 0 12px 32px rgba(26,23,20,0.10), 0 4px 8px rgba(26,23,20,0.06);
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ── HEADER ── */
+  .site-header {
+    background: var(--ink);
+    color: #fff;
+    padding: 0 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    letter-spacing: 0.02em;
+    color: #fff;
+  }
+  .logo span { color: #c8a87a; }
+  .header-meta {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    font-size: 12px;
+    color: rgba(255,255,255,0.6);
+    font-weight: 300;
+  }
+  .header-meta strong { color: #fff; font-weight: 500; }
+  .status-pill {
+    background: var(--jade);
+    color: #fff;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* ── LAYOUT ── */
+  .page { max-width: 1320px; margin: 0 auto; padding: 36px 40px 60px; }
+
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title .icon { font-size: 22px; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+  .col-span-2 { grid-column: span 2; }
+
+  .mb-32 { margin-bottom: 32px; }
+  .mb-24 { margin-bottom: 24px; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px;
+    border: 1px solid var(--border);
+    transition: box-shadow 0.25s, transform 0.25s;
+  }
+  .card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+  }
+
+  /* KPI CARDS */
+  .kpi-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.25s, transform 0.25s;
+  }
+  .kpi-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+  .kpi-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    margin-bottom: 8px;
+  }
+  .kpi-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.1;
+  }
+  .kpi-sub {
+    font-size: 12px;
+    color: var(--ink3);
+    margin-top: 4px;
+    font-weight: 300;
+  }
+  .kpi-accent { width: 32px; height: 3px; border-radius: 2px; margin-top: 12px; }
+
+  /* HEALTH CARDS */
+  .health-card {
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border: 1px solid transparent;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .health-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+  .health-icon { font-size: 26px; }
+  .health-name { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+  .health-status { font-size: 13px; font-weight: 600; margin-top: 2px; }
+
+  .health-green  { background: var(--jade-soft);  border-color: #b6ddc7; }
+  .health-yellow { background: var(--amber-soft); border-color: #f0d4a0; }
+  .health-red    { background: var(--rose-soft);  border-color: #e8bbba; }
+
+  .health-green  .health-status { color: var(--jade); }
+  .health-yellow .health-status { color: var(--amber); }
+  .health-red    .health-status { color: var(--rose); }
+
+  /* CHART WRAPPER */
+  .chart-wrap {
+    position: relative;
+    height: 260px;
+  }
+  .chart-wrap-sm { height: 220px; }
+
+  /* PROGRESS BAR */
+  .prog-bar {
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+  .prog-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1s cubic-bezier(.4,0,.2,1);
+  }
+
+  /* BADGE */
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .badge-critical { background: var(--rose-soft);  color: var(--rose); }
+  .badge-high     { background: var(--amber-soft); color: var(--amber); }
+  .badge-medium   { background: var(--cobalt-soft); color: var(--cobalt); }
+  .badge-low      { background: var(--jade-soft);  color: var(--jade); }
+  .badge-upcoming { background: var(--amber-soft); color: var(--amber); }
+  .badge-planned  { background: var(--cobalt-soft); color: var(--cobalt); }
+  .badge-target   { background: var(--mauve-soft); color: var(--mauve); }
+  .badge-progress { background: var(--jade-soft);  color: var(--jade); }
+
+  /* TABLES */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .data-table th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    padding: 10px 14px;
+    border-bottom: 2px solid var(--border);
+    background: var(--surface2);
+  }
+  .data-table th:first-child { border-radius: var(--radius-sm) 0 0 0; }
+  .data-table th:last-child  { border-radius: 0 var(--radius-sm) 0 0; }
+  .data-table td {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+    color: var(--ink);
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tbody tr {
+    transition: background 0.15s;
+  }
+  .data-table tbody tr:hover { background: var(--surface2); }
+
+  /* PHASE STATUS */
+  .phase-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .dot-active  { background: var(--jade); box-shadow: 0 0 0 3px rgba(58,125,90,0.2); }
+  .dot-pending { background: var(--ink3); }
+
+  /* TIMELINE / ACTIVITY */
+  .timeline { display: flex; flex-direction: column; gap: 0; }
+  .tl-item {
+    display: flex;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+    border-radius: 6px;
+    padding-left: 8px;
+  }
+  .tl-item:last-child { border-bottom: none; }
+  .tl-item:hover { background: var(--surface2); }
+  .tl-dot-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 3px; }
+  .tl-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .tl-line { width: 2px; flex: 1; background: var(--border); min-height: 20px; }
+  .tl-item:last-child .tl-line { display: none; }
+  .tl-content { flex: 1; }
+  .tl-title { font-weight: 600; font-size: 13px; color: var(--ink); }
+  .tl-meta  { font-size: 12px; color: var(--ink3); margin-top: 2px; }
+
+  /* BUDGET ALLOCATION BARS */
+  .budget-row { margin-bottom: 14px; }
+  .budget-row-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .budget-row-name  { font-size: 13px; font-weight: 500; }
+  .budget-row-amt   { font-size: 13px; color: var(--ink2); font-weight: 300; }
+
+  /* RISK SUMMARY PILLS */
+  .risk-summary { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+  .risk-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid transparent;
+  }
+  .risk-pill .count {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  /* MILESTONE PROGRESS */
+  .ms-completion { width: 120px; }
+
+  /* DIVIDER */
+  .section-divider { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+
+  /* LEGEND */
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 16px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink2); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+
+  /* PRINT */
+  @media print {
+    .site-header { position: relative; }
+    .card, .kpi-card { break-inside: avoid; box-shadow: none; border: 1px solid #ddd; }
+    body { background: #fff; }
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .page { padding: 24px 20px 48px; }
+    .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(2, 1fr); }
+    .grid-2 { grid-template-columns: 1fr; }
+    .col-span-2 { grid-column: span 1; }
+    .site-header { padding: 0 20px; height: auto; flex-wrap: wrap; gap: 8px; padding: 12px 20px; }
+    .header-meta { flex-wrap: wrap; gap: 12px; }
+    .ms-completion { width: 80px; }
+  }
+  @media (max-width: 560px) {
+    .grid-4 { grid-template-columns: 1fr 1fr; }
+    .grid-3 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- STICKY HEADER -->
+<header class="site-header">
+  <div class="logo">Style<span>Nest</span></div>
+  <div class="header-meta">
+    <div><strong>Project Manager</strong> &nbsp;PM Team</div>
+    <div><strong>Start</strong> &nbsp;May 1, 2026</div>
+    <div><strong>Go-Live</strong> &nbsp;Oct 1, 2026</div>
+    <div><span class="status-pill">● In Progress</span></div>
+  </div>
+</header>
+
+<main class="page">
+
+  <!-- ── KPI ROW ── -->
+  <div class="grid-4 mb-32">
+    <div class="kpi-card">
+      <div class="kpi-label">Total Budget</div>
+      <div class="kpi-value">₹50L</div>
+      <div class="kpi-sub">Approved Cap · Hard-Capped</div>
+      <div class="kpi-accent" style="background:var(--jade)"></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Current Phase</div>
+      <div class="kpi-value" style="font-size:20px">Phase 1</div>
+      <div class="kpi-sub">Discovery &amp; Planning</div>
+      <div class="kpi-accent" style="background:var(--cobalt)"></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Overall Progress</div>
+      <div class="kpi-value">14%</div>
+      <div class="kpi-sub">Phase 1 of 5 in flight</div>
+      <div class="kpi-accent" style="background:var(--amber)"></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Critical Risks</div>
+      <div class="kpi-value" style="color:var(--rose)">1</div>
+      <div class="kpi-sub">T-01 Platform Delay</div>
+      <div class="kpi-accent" style="background:var(--rose)"></div>
+    </div>
+  </div>
+
+  <!-- ── PROJECT HEALTH ── -->
+  <div class="mb-32">
+    <div class="section-title"><span class="icon">💚</span> Project Health Summary</div>
+    <div class="grid-3" style="grid-template-columns:repeat(5,1fr)">
+      <div class="health-card health-green">
+        <div class="health-icon">📋</div>
+        <div>
+          <div class="health-name">Scope</div>
+          <div class="health-status">On Track</div>
+        </div>
+      </div>
+      <div class="health-card health-yellow">
+        <div class="health-icon">📅</div>
+        <div>
+          <div class="health-name">Schedule</div>
+          <div class="health-status">Monitor</div>
+        </div>
+      </div>
+      <div class="health-card health-green">
+        <div class="health-icon">💰</div>
+        <div>
+          <div class="health-name">Budget</div>
+          <div class="health-status">On Track</div>
+        </div>
+      </div>
+      <div class="health-card health-red">
+        <div class="health-icon">⚠️</div>
+        <div>
+          <div class="health-name">Risk</div>
+          <div class="health-status">High Attention</div>
+        </div>
+      </div>
+      <div class="health-card health-green">
+        <div class="health-icon">✅</div>
+        <div>
+          <div class="health-name">Quality</div>
+          <div class="health-status">On Track</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CHARTS ROW 1 ── -->
+  <div class="grid-2 mb-32">
+
+    <!-- Overall Progress Doughnut -->
+    <div class="card">
+      <div class="section-title"><span class="icon">🎯</span> Overall Progress</div>
+      <div class="chart-wrap">
+        <canvas id="progressChart"></canvas>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#3a7d5a"></div>Completed (14%)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#3a5fa0"></div>In Progress (10%)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#e8e3dc"></div>Pending (76%)</div>
+      </div>
+    </div>
+
+    <!-- Task Status Pie -->
+    <div class="card">
+      <div class="section-title"><span class="icon">📊</span> Tasks by Status</div>
+      <div class="chart-wrap">
+        <canvas id="taskChart"></canvas>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#3a7d5a"></div>Completed (0)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#3a5fa0"></div>In Progress (7)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#d4903a"></div>Pending (24)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#c8504a"></div>Blocked (0)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CHARTS ROW 2 ── -->
+  <div class="grid-2 mb-32">
+
+    <!-- Budget Bar Chart -->
+    <div class="card">
+      <div class="section-title"><span class="icon">💸</span> Budget Breakdown</div>
+      <div class="chart-wrap" style="height:280px">
+        <canvas id="budgetChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Resource Allocation -->
+    <div class="card">
+      <div class="section-title"><span class="icon">👥</span> Resource Allocation</div>
+      <div class="chart-wrap" style="height:280px">
+        <canvas id="resourceChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PHASE DELIVERY ROADMAP ── -->
+  <div class="card mb-32">
+    <div class="section-title"><span class="icon">🗺️</span> Project Delivery Roadmap</div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Phase</th>
+          <th>Description</th>
+          <th>Duration</th>
+          <th>Tasks</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Phase 1</strong></td>
+          <td>Discovery &amp; Planning</td>
+          <td>May 1 – Jun 15, 2026</td>
+          <td>7 tasks</td>
+          <td><span class="phase-dot dot-active"></span><strong style="color:var(--jade)">IN PROGRESS</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Phase 2</strong></td>
+          <td>Build &amp; Catalogue</td>
+          <td>Jun 16 – Aug 31, 2026</td>
+          <td>7 tasks</td>
+          <td><span class="phase-dot dot-pending"></span><span style="color:var(--ink3)">NOT STARTED</span></td>
+        </tr>
+        <tr>
+          <td><strong>Phase 3</strong></td>
+          <td>Testing &amp; Soft Launch</td>
+          <td>Sep 1 – Sep 30, 2026</td>
+          <td>6 tasks</td>
+          <td><span class="phase-dot dot-pending"></span><span style="color:var(--ink3)">NOT STARTED</span></td>
+        </tr>
+        <tr>
+          <td><strong>Phase 4</strong></td>
+          <td>Public Launch</td>
+          <td>Oct 1 – Oct 31, 2026</td>
+          <td>5 tasks</td>
+          <td><span class="phase-dot dot-pending"></span><span style="color:var(--ink3)">NOT STARTED</span></td>
+        </tr>
+        <tr>
+          <td><strong>Phase 5</strong></td>
+          <td>Post-Launch Optimisation</td>
+          <td>Nov 1 – Dec 31, 2026</td>
+          <td>6 tasks</td>
+          <td><span class="phase-dot dot-pending"></span><span style="color:var(--ink3)">NOT STARTED</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── MILESTONE TRACKER ── -->
+  <div class="card mb-32">
+    <div class="section-title"><span class="icon">🏁</span> Milestone Tracking</div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Milestone</th>
+          <th>Target Date</th>
+          <th>Phase</th>
+          <th>Status</th>
+          <th style="width:140px">Completion</th>
+        </tr>
+      </thead>
+      <tbody id="milestoneTable"></tbody>
+    </table>
+  </div>
+
+  <!-- ── RISKS & ISSUES ── -->
+  <div class="card mb-32">
+    <div class="section-title"><span class="icon">⚠️</span> Risks &amp; Issues</div>
+
+    <!-- Risk summary pills -->
+    <div class="risk-summary">
+      <div class="risk-pill" style="background:var(--rose-soft);border-color:#e8bbba">
+        <div class="count" style="color:var(--rose)">1</div>
+        <div style="font-size:12px;color:var(--rose)">Critical</div>
+      </div>
+      <div class="risk-pill" style="background:var(--amber-soft);border-color:#f0d4a0">
+        <div class="count" style="color:var(--amber)">12</div>
+        <div style="font-size:12px;color:var(--amber)">High</div>
+      </div>
+      <div class="risk-pill" style="background:var(--cobalt-soft);border-color:#c2d0ee">
+        <div class="count" style="color:var(--cobalt)">9</div>
+        <div style="font-size:12px;color:var(--cobalt)">Medium</div>
+      </div>
+      <div class="risk-pill" style="background:var(--jade-soft);border-color:#b6ddc7">
+        <div class="count" style="color:var(--jade)">3</div>
+        <div style="font-size:12px;color:var(--jade)">Low</div>
+      </div>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Risk Description</th>
+          <th>Level</th>
+          <th>Mitigation Plan</th>
+          <th>Owner</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>T-01</strong></td>
+          <td>Platform development delays – missed go-live</td>
+          <td><span class="badge badge-critical">Critical</span></td>
+          <td>2-week buffer; agile sprints; phased release option</td>
+          <td>CTO</td>
+          <td><span class="badge badge-high">Monitoring</span></td>
+        </tr>
+        <tr>
+          <td><strong>C-01</strong></td>
+          <td>Budget overrun exceeding ₹50L ceiling</td>
+          <td><span class="badge badge-high">High</span></td>
+          <td>Monthly reviews; change control; 10% contingency reserve</td>
+          <td>PM / CFO</td>
+          <td><span class="badge badge-progress">Active</span></td>
+        </tr>
+        <tr>
+          <td><strong>O-01</strong></td>
+          <td>Supplier delays causing stockouts at launch</td>
+          <td><span class="badge badge-high">High</span></td>
+          <td>20% safety stock; 2 backup suppliers per category</td>
+          <td>Ops Lead</td>
+          <td><span class="badge badge-progress">Active</span></td>
+        </tr>
+        <tr>
+          <td><strong>C-02</strong></td>
+          <td>Insufficient customer acquisition (5,000 user target)</td>
+          <td><span class="badge badge-high">High</span></td>
+          <td>Waitlist 8 weeks pre-launch; SEO from Day 1; influencer seeding</td>
+          <td>Marketing</td>
+          <td><span class="badge badge-progress">Active</span></td>
+        </tr>
+        <tr>
+          <td><strong>P-02</strong></td>
+          <td>Scope creep expanding beyond original charter</td>
+          <td><span class="badge badge-high">High</span></td>
+          <td>Formal change request process; PM + Sponsor approval required</td>
+          <td>PM</td>
+          <td><span class="badge badge-progress">Active</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── ACTIVITY & NEXT STEPS ── -->
+  <div class="grid-2 mb-32">
+
+    <!-- Recent Activity -->
+    <div class="card">
+      <div class="section-title"><span class="icon">💬</span> Recent Activities &amp; Comments</div>
+      <div class="timeline" id="activityFeed"></div>
+    </div>
+
+    <!-- Budget Allocation Details -->
+    <div class="card">
+      <div class="section-title"><span class="icon">📦</span> Budget Allocation Details</div>
+      <div id="budgetBars"></div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ─────────────────────────────────────────
+//  DATA  (replace with real data as needed)
+// ─────────────────────────────────────────
+
+const milestones = [
+  { id:'M1', name:'Brand & Vendor Sign-Off Complete',        date:'Jun 15, 2026', phase:'Phase 1', status:'upcoming', pct: 30 },
+  { id:'M2', name:'UAT-Ready Platform & Catalogue Loaded',   date:'Aug 31, 2026', phase:'Phase 2', status:'planned',  pct:  0 },
+  { id:'M3', name:'Beta Launch Complete & Go/No-Go Approved',date:'Sep 30, 2026', phase:'Phase 3', status:'planned',  pct:  0 },
+  { id:'M4', name:'Public Go-Live Day 🚀',                   date:'Oct 1, 2026',  phase:'Phase 4', status:'target',   pct:  0 },
+  { id:'M5', name:'First 1,000 Orders Fulfilled',            date:'Oct 31, 2026', phase:'Phase 4', status:'planned',  pct:  0 },
+  { id:'M6', name:'30-Day Review Report Delivered',          date:'Nov 7, 2026',  phase:'Phase 5', status:'planned',  pct:  0 },
+  { id:'M7', name:'Phase 2 Roadmap Approved',                date:'Dec 31, 2026', phase:'Phase 5', status:'planned',  pct:  0 },
+];
+
+const activities = [
+  { dot:'#3a7d5a', title:'Project Kick-Off Complete',          meta:'May 1–7, 2026 · PM Team · Phase 1 underway' },
+  { dot:'#3a5fa0', title:'Business Requirements Docs in Draft', meta:'May 8–15, 2026 · Business Analyst · On schedule' },
+  { dot:'#d4903a', title:'Vendor & Tech Stack Selection Active',meta:'May 8–22, 2026 · CTO · Reviewing 3 shortlisted platforms' },
+  { dot:'#7a5a8a', title:'Brand Identity Design in Progress',   meta:'May 8–31, 2026 · Design Team · Initial concepts underway' },
+  { dot:'#3a5fa0', title:'GST / Legal Entity Setup Initiated',  meta:'May 2026 · Legal · Target: May 31 completion' },
+  { dot:'#c8504a', title:'T-01 Risk Flagged – Platform Delay',  meta:'May 21, 2026 · Risk Log · 2-week buffer in place' },
+];
+
+const budgetData = [
+  { name:'Website Design & Development', amt:'₹12,00,000', pct:24, color:'#3a5fa0' },
+  { name:'Inventory (Initial Stock)',    amt:'₹15,00,000', pct:30, color:'#3a7d5a' },
+  { name:'Marketing & Brand Launch',     amt:'₹10,00,000', pct:20, color:'#d4903a' },
+  { name:'Operations & Logistics',       amt:'₹6,00,000',  pct:12, color:'#7a5a8a' },
+  { name:'Staffing & Training',          amt:'₹4,00,000',  pct: 8, color:'#c8504a' },
+  { name:'Contingency Reserve',          amt:'₹3,00,000',  pct: 6, color:'#9e9890' },
+];
+
+// ─────────────────────────────────────────
+//  MILESTONE TABLE RENDER
+// ─────────────────────────────────────────
+const badgeMap = { upcoming:'badge-upcoming', planned:'badge-planned', target:'badge-target' };
+const badgeLabel = { upcoming:'Upcoming', planned:'Planned', target:'Target' };
+const tb = document.getElementById('milestoneTable');
+milestones.forEach(m => {
+  const progColor = m.pct > 0 ? '#3a7d5a' : '#e8e3dc';
+  tb.innerHTML += `
+    <tr>
+      <td><strong>${m.id}</strong></td>
+      <td>${m.name}</td>
+      <td>${m.date}</td>
+      <td>${m.phase}</td>
+      <td><span class="badge ${badgeMap[m.status]}">${badgeLabel[m.status]}</span></td>
+      <td class="ms-completion">
+        <div style="font-size:11px;color:var(--ink3);margin-bottom:2px">${m.pct}%</div>
+        <div class="prog-bar"><div class="prog-fill" style="width:${m.pct}%;background:${progColor}"></div></div>
+      </td>
+    </tr>`;
+});
+
+// ─────────────────────────────────────────
+//  ACTIVITY FEED
+// ─────────────────────────────────────────
+const feed = document.getElementById('activityFeed');
+activities.forEach(a => {
+  feed.innerHTML += `
+    <div class="tl-item">
+      <div class="tl-dot-wrap">
+        <div class="tl-dot" style="background:${a.dot}"></div>
+        <div class="tl-line"></div>
+      </div>
+      <div class="tl-content">
+        <div class="tl-title">${a.title}</div>
+        <div class="tl-meta">${a.meta}</div>
+      </div>
+    </div>`;
+});
+
+// ─────────────────────────────────────────
+//  BUDGET BARS
+// ─────────────────────────────────────────
+const bb = document.getElementById('budgetBars');
+budgetData.forEach(b => {
+  bb.innerHTML += `
+    <div class="budget-row">
+      <div class="budget-row-header">
+        <span class="budget-row-name">${b.name}</span>
+        <span class="budget-row-amt">${b.amt} &nbsp;<span style="color:var(--ink3)">(${b.pct}%)</span></span>
+      </div>
+      <div class="prog-bar" style="height:10px">
+        <div class="prog-fill" style="width:${b.pct}%;background:${b.color}"></div>
+      </div>
+    </div>`;
+});
+
+// ─────────────────────────────────────────
+//  CHART.JS  (all charts)
+// ─────────────────────────────────────────
+
+const FONT = "'DM Sans', sans-serif";
+Chart.defaults.font.family = FONT;
+Chart.defaults.color = '#9e9890';
+
+// 1. Overall Progress Doughnut
+new Chart(document.getElementById('progressChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Completed', 'In Progress', 'Pending'],
+    datasets: [{
+      data: [14, 10, 76],
+      backgroundColor: ['#3a7d5a', '#3a5fa0', '#e8e3dc'],
+      borderWidth: 0,
+      hoverOffset: 6,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    cutout: '68%',
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed}%` } }
+    }
+  }
+});
+
+// 2. Task Status Pie
+new Chart(document.getElementById('taskChart'), {
+  type: 'pie',
+  data: {
+    labels: ['In Progress', 'Pending', 'Completed', 'Blocked'],
+    datasets: [{
+      data: [7, 24, 0, 0],
+      backgroundColor: ['#3a5fa0', '#d4903a', '#3a7d5a', '#c8504a'],
+      borderWidth: 0,
+      hoverOffset: 6,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed} tasks` } }
+    }
+  }
+});
+
+// 3. Budget Bar Chart
+new Chart(document.getElementById('budgetChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Website Dev', 'Inventory', 'Marketing', 'Operations', 'Staffing', 'Contingency'],
+    datasets: [
+      {
+        label: 'Planned (₹)',
+        data: [1200000, 1500000, 1000000, 600000, 400000, 300000],
+        backgroundColor: '#3a5fa0',
+        borderRadius: 6,
+      },
+      {
+        label: 'Spent (₹)',
+        data: [0, 0, 0, 0, 0, 0], // Phase 1 – no spend yet
+        backgroundColor: '#3a7d5a',
+        borderRadius: 6,
+      },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position:'top', labels:{ boxWidth:12, padding:16 } } },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+      y: {
+        grid: { color: '#f0ede8' },
+        ticks: {
+          callback: v => '₹' + (v/100000) + 'L',
+          font: { size: 11 }
+        }
+      }
+    }
+  }
+});
+
+// 4. Resource Allocation Horizontal Bar
+new Chart(document.getElementById('resourceChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Development Team', 'Testing Team', 'Design Team', 'Marketing Team', 'Management'],
+    datasets: [{
+      label: 'Utilisation %',
+      data: [75, 20, 80, 50, 90],
+      backgroundColor: ['#3a5fa0', '#3a7d5a', '#7a5a8a', '#d4903a', '#c8504a'],
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: {
+        grid: { color: '#f0ede8' },
+        max: 100,
+        ticks: { callback: v => v + '%', font: { size: 11 } }
+      },
+      y: { grid: { display: false }, ticks: { font: { size: 12 } } }
+    }
+  }
+});
+</script>
+</body>
+</html>
